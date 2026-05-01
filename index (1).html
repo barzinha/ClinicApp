@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ClinicApp - Versão Final</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #09090b;
+            --card: #18181b;
+            --accent: #22d3ee;
+            --text: #fafafa;
+            --text-dim: #a1a1aa;
+            --border: #27272a;
+            --success: #22c55e;
+            --gold: #f59e0b; /* Cor para o botão de contribuição */
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* SPLASH 5s */
+        #splash { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: 0.8s; }
+        .loader-bar { width: 150px; height: 3px; background: #333; margin-top: 20px; border-radius: 10px; overflow: hidden; }
+        .loader-fill { width: 0%; height: 100%; background: var(--accent); animation: load 5s linear forwards; }
+        @keyframes load { to { width: 100%; } }
+
+        header { padding: 15px; background: var(--card); border-bottom: 1px solid var(--border); text-align: center; font-weight: bold; }
+        main { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 110px; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
+        input, select { width: 100%; background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; outline: none; }
+        
+        .btn-save { width: 100%; background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* BOTÃO DE CONTRIBUIÇÃO */
+        .btn-donate { 
+            width: 100%; 
+            background: linear-gradient(45deg, #f59e0b, #fbbf24); 
+            color: #000; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .agenda-item { display: flex; padding: 15px; background: var(--card); border-radius: 10px; margin-bottom: 8px; align-items: center; border-left: 4px solid #333; cursor: pointer; }
+        .agenda-time { color: var(--accent); font-weight: bold; width: 60px; }
+
+        nav { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; padding: 10px 0 25px; border-top: 1px solid var(--border); }
+        .nav-item { flex: 1; text-align: center; color: var(--text-dim); font-size: 0.65rem; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item i { display: block; font-size: 1.2rem; margin-bottom: 3px; }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <i class="fas fa-clinic-medical" style="font-size: 4rem; color: var(--accent);"></i>
+        <h1 style="margin-top:15px; letter-spacing: 2px;">CLINIC<span style="color:var(--accent)">APP</span></h1>
+        <div class="loader-bar"><div class="loader-fill"></div></div>
+    </div>
+
+    <header>SISTEMA CLÍNICO</header>
+
+    <main>
+        <div id="agenda" class="section active">
+            <h3 style="margin-top:0">Mapa de Horários</h3>
+            <div id="lista-agenda"></div>
+        </div>
+
+        <div id="cad-paciente" class="section">
+            <h3>Marcar Consulta</h3>
+            <form class="card" onsubmit="confirmarAgendamento(event)">
+                <div class="input-group"><label>Horário</label><input type="text" id="horario-escolhido" readonly></div>
+                <div class="input-group"><label>Paciente</label><input type="text" id="p-nome" required></div>
+                <div class="input-group"><label>CPF</label><input type="text" id="p-cpf" required></div>
+                <div class="input-group"><label>Plano</label><select id="p-plano"></select></div>
+                <div class="input-group"><label>Médico</label><select id="p-medico"></select></div>
+                <button type="submit" class="btn-save">Confirmar</button>
+            </form>
+        </div>
+
+        <div id="cad-medico" class="section">
+            <h3>Cadastrar Médico</h3>
+            <form class="card" onsubmit="cadastrarMedico(event)">
+                <div class="input-group"><label>Nome</label><input type="text" id="m-nome" required></div>
+                <div class="input-group"><label>CRM</label><input type="text" id="m-crm" required></div>
+                <button type="submit" class="btn-save">Salvar Médico</button>
+            </form>
+        </div>
+
+        <div id="config" class="section">
+            <h3>Contribuição & Ajustes</h3>
+            <div class="card">
+                <p style="font-size: 0.9rem; text-align: center; color: var(--text-dim);">
+                    Se este aplicativo está ajudando na sua gestão e você deseja apoiar o criador, clique no botão abaixo:
+                </p>
+                <a href="https://mpago.la/235XKuS" target="_blank" class="btn-donate">
+                    <i class="fas fa-coffee"></i> APOIAR CRIADOR
+                </a>
+            </div>
+
+            <div class="card">
+                <label>Opções do Sistema</label>
+                <button class="btn-save" style="background:#444; color:white" onclick="location.reload()">Reiniciar App</button>
+            </div>
+        </div>
+    </main>
+
+    <nav>
+        <div class="nav-item active" onclick="showSection(event, 'agenda')"><i class="fas fa-calendar-alt"></i>Agenda</div>
+        <div class="nav-item" onclick="showSection(event, 'cad-paciente')"><i class="fas fa-plus-circle"></i>Agendar</div>
+        <div class="nav-item" onclick="showSection(event, 'cad-medico')"><i class="fas fa-user-md"></i>Médicos</div>
+        <div class="nav-item" onclick="showSection(event, 'config')"><i class="fas fa-heart"></i>Apoiar</div>
+    </nav>
+
+    <script>
+        let medicos = ["Dr. Bruno (Oftalmo)"];
+        let convenios = ["Particular", "Unimed"];
+        let agendamentos = {};
+
+        setTimeout(() => {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => document.getElementById('splash').style.display = 'none', 800);
+        }, 5000);
+
+        function showSection(e, id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(e) e.currentTarget.classList.add('active');
+            atualizarSelects();
+        }
+
+        function carregarAgenda() {
+            const lista = document.getElementById('lista-agenda');
+            let html = '';
+            for (let min = 7.5*60; min <= 18.5*60; min += 30) {
+                let h = Math.floor(min/60);
+                let m = min%60;
+                let hora = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                let ocupado = agendamentos[hora];
+                html += `
+                    <div class="agenda-item" onclick="prepararAgendamento('${hora}')" style="border-left-color: ${ocupado ? 'var(--accent)' : '#333'}">
+                        <div class="agenda-time">${hora}</div>
+                        <div style="flex:1">
+                            <div style="font-size:0.9rem">${ocupado ? ocupado.nome : 'Livre'}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim)">${ocupado ? ocupado.medico : 'Toque para marcar'}</div>
+                        </div>
+                    </div>`;
+            }
+            lista.innerHTML = html;
+        }
+
+        function prepararAgendamento(hora) {
+            document.getElementById('horario-escolhido').value = hora;
+            showSection(null, 'cad-paciente');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.nav-item')[1].classList.add('active');
+        }
+
+        function atualizarSelects() {
+            document.getElementById('p-medico').innerHTML = medicos.map(m => `<option>${m}</option>`).join('');
+            document.getElementById('p-plano').innerHTML = convenios.map(c => `<option>${c}</option>`).join('');
+        }
+
+        function cadastrarMedico(e) {
+            e.preventDefault();
+            medicos.push(document.getElementById('m-nome').value);
+            alert("Médico cadastrado!");
+            e.target.reset();
+            showSection(null, 'agenda');
+        }
+
+        function confirmarAgendamento(e) {
+            e.preventDefault();
+            const hora = document.getElementById('horario-escolhido').value;
+            agendamentos[hora] = {
+                nome: document.getElementById('p-nome').value,
+                medico: document.getElementById('p-medico').value
+            };
+            alert("Agendado com sucesso!");
+            e.target.reset();
+            carregarAgenda();
+            showSection(null, 'agenda');
+        }
+
+        window.onload = () => { carregarAgenda(); atualizarSelects(); };
+    </script>
+</body>
+</html>
